@@ -15,13 +15,14 @@ return new class extends Migration
             $table->id();
             $table->string('nom');
             $table->string('prenom');
-            $table->string('telephone');
-            $table->string('photo');
+            $table->string('telephone')->default('00000000');
+            $table->string('adresse')->nullable(); // ← adresse peut être optionnelle si souhaité
             $table->string('email')->unique();
             $table->timestamp('email_verified_at')->nullable();
-            $table->date('date_de_naissance');
             $table->string('password');
-            $table->boolean('is_active')->default(false);
+            $table->string('statut')->default('actif'); // valeurs possibles : actif, en attente, désactivé
+            $table->string('role')->default('client');  // client, admin, etc.
+            $table->softDeletes();
             $table->rememberToken();
             $table->timestamps();
         });
@@ -47,8 +48,11 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('users');
-        Schema::dropIfExists('password_reset_tokens');
+        Schema::table('users', function (Blueprint $table) {
+        $table->dropSoftDeletes();
+    });
         Schema::dropIfExists('sessions');
+        Schema::dropIfExists('password_reset_tokens');
+        Schema::dropIfExists('users');
     }
 };

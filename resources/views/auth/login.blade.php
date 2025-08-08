@@ -1,85 +1,147 @@
 @extends('layouts.app')
 
 @section('content')
-    <!-- Login Section -->
-    <section class="auth-section">
-        <div class="container">
-            <div class="row justify-content-center">
-                <div class="col-lg-6">
-                    <div class="auth-card animate__animated animate__fadeInUp">
-                        <div class="auth-header">
-                            <h3><i class="fas fa-sign-in-alt me-2"></i> {{ __('Login') }}</h3>
-                        </div>
-                        <div class="auth-body">
+<div class="form-container">
+    <h2>Connexion</h2>
 
-                            @if (session('success'))
-                                <div class="alert alert-success alert-dismissible fade show" role="alert">
-                                    {{ session('success') }}
-                                    <button type="button" class="btn-close" data-bs-dismiss="alert"
-                                        aria-label="Close"></button>
-                                </div>
-                            @endif
-
-                            <form method="POST" action="{{ route('connexion') }}">
-                                @csrf
-
-                                <div class="mb-3">
-                                    <label for="email" class="form-label">{{ __('Email Address') }}</label>
-                                    <input id="email" type="email"
-                                        class="form-control @error('email') is-invalid @enderror" name="email"
-                                        value="{{ old('email') }}" required autocomplete="email" autofocus>
-
-                                    @error('email')
-                                        <span class="invalid-feedback" role="alert">
-                                            <strong>{{ $message }}</strong>
-                                        </span>
-                                    @enderror
-                                </div>
-
-                                <div class="mb-3">
-                                    <label for="password" class="form-label">{{ __('Password') }}</label>
-                                    <input id="password" type="password"
-                                        class="form-control @error('password') is-invalid @enderror" name="password"
-                                        required autocomplete="current-password">
-
-                                    @error('password')
-                                        <span class="invalid-feedback" role="alert">
-                                            <strong>{{ $message }}</strong>
-                                        </span>
-                                    @enderror
-                                </div>
-
-                                <div class="mb-3 form-check">
-                                    <input class="form-check-input" type="checkbox" name="remember" id="remember"
-                                        {{ old('remember') ? 'checked' : '' }}>
-                                    <label class="form-check-label" for="remember">
-                                        {{ __('Remember Me') }}
-                                    </label>
-                                </div>
-
-                                <button type="submit" class="btn btn-def w-100">
-                                    <i class="fas fa-sign-in-alt me-2"></i> {{ __('Login') }}
-                                </button>
-
-                                <div class="text-center mt-3">
-                                    <p>{{ __('Pas encore de compte?') }} <a
-                                            href="{{ route('register') }}">{{ __('Inscrivez-vous ici') }}</a></p>
-                                </div>
-                                <center>
-                                    <div class="flex items-center justify-end mt-4">
-                                        @if (Route::has('password.request'))
-                                            <a class="underline text-sm text-gray-600 hover:text-gray-900 rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-                                                href="{{ route('password.request') }}">
-                                                {{ __('Forgot your password?') }}
-                                            </a>
-                                        @endif
-                                    </div>
-                                </center>
-                            </form>
-                        </div>
-                    </div>
-                </div>
-            </div>
+    @if(session('status'))
+        <div style="color: green; margin-bottom: 10px;">
+            {{ session('status') }}
         </div>
-    </section>
+    @endif
+
+    <form method="POST" action="{{ route('login') }}">
+        @csrf
+
+        <!-- Email -->
+        <div>
+            <label for="email">Adresse email</label>
+            <input type="email" id="email" name="email" value="{{ old('email') }}" required autofocus>
+            @error('email')
+                <div style="color:red; font-size: 0.85rem;">{{ $message }}</div>
+            @enderror
+        </div>
+
+        <!-- Mot de passe -->
+        <div>
+            <label for="password">Mot de passe</label>
+            <input type="password" id="password" name="password" required>
+            @error('password')
+                <div style="color:red; font-size: 0.85rem;">{{ $message }}</div>
+            @enderror
+        </div>
+
+        <!-- Se souvenir -->
+        <div>
+            <label>
+                <input type="checkbox" name="remember"> Se souvenir de moi
+            </label>
+        </div>
+
+        <!-- Soumettre -->
+        <div style="margin-top: 20px;">
+            <button type="submit">Se connecter</button>
+        </div>
+    </form>
+
+    <div class="bottom-links">
+        @if (Route::has('password.request'))
+            <p><a href="{{ route('password.request') }}">Mot de passe oublié ?</a></p>
+        @endif
+        <p>Pas encore inscrit ? <a href="{{ route('register') }}">Créer un compte</a></p>
+    </div>
+</div>
+    <style>
+        body {
+            background: linear-gradient(to right, #3b82f6, #ecf0f1, #22c55e);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        main {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .form-container {
+            background: #fff;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 420px;
+        }
+
+        h2 {
+            text-align: center;
+            margin-bottom: 24px;
+            color: #333;
+        }
+
+        label {
+            font-weight: 600;
+            display: block;
+            margin-bottom: 6px;
+            color: #555;
+        }
+
+        input[type="email"],
+        input[type="password"] {
+            width: 100%;
+            padding: 10px 14px;
+            margin-bottom: 16px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            font-size: 1rem;
+        }
+
+        input[type="checkbox"] {
+            margin-right: 6px;
+        }
+
+        button {
+            background-color: #3b82f6;
+            color: white;
+            padding: 12px;
+            width: 100%;
+            font-size: 1rem;
+            font-weight: bold;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #2563eb;
+        }
+
+        .bottom-links {
+            text-align: center;
+            margin-top: 16px;
+            font-size: 0.9rem;
+        }
+
+        .bottom-links a {
+            color: #3b82f6;
+            text-decoration: none;
+        }
+
+        .bottom-links a:hover {
+            text-decoration: underline;
+        }
+
+        footer {
+            text-align: center;
+            padding: 10px;
+            background: #fff;
+            font-size: 0.85rem;
+            color: #888;
+        }
+    </style>
 @endsection

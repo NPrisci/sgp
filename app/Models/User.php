@@ -2,87 +2,70 @@
 
 namespace App\Models;
 
+// use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Notifications\Notifiable;
 
 class User extends Authenticatable
 {
-    use HasFactory, Notifiable, SoftDeletes;
-
+    /** @use HasFactory<\Database\Factories\UserFactory> */
+    use HasFactory, Notifiable;
+    use SoftDeletes;
+    use Notifiable;
+    /**
+     * The attributes that are mass assignable.
+     *
+     * @var list<string>
+     */
     protected $fillable = [
         'nom',
         'prenom',
         'telephone',
-        'photo',
+        'adresse',
         'email',
-        'date_de_naissance',
         'password',
-        'is_active',
-        'is_admin',
+        'role',
+        'statut',
     ];
 
+    /**
+     * The attributes that should be hidden for serialization.
+     *
+     * @var list<string>
+     */
     protected $hidden = [
         'password',
         'remember_token',
     ];
 
-    protected $casts = [
-        'email_verified_at' => 'datetime',
-        'date_de_naissance' => 'date',
-        'is_active' => 'boolean',
-        'is_admin' => 'boolean',
-    ];
-
     /**
-     * Relation avec Administrateur
+     * Get the attributes that should be cast.
+     *
+     * @return array<string, string>
      */
-    public function administrateur()
+    protected function casts(): array
     {
-        return $this->hasOne(Administrateur::class);
+        return [
+            'email_verified_at' => 'datetime',
+            'password' => 'hashed',
+        ];
+    }
+    public function panier()
+    {
+        return $this->hasMany(Panier::class);
     }
 
-    /**
-     * Relation avec Eleve
-     */
-    public function eleve()
-    {
-        return $this->hasOne(Eleve::class);
-    }
-
-    /**
-     * Relation avec Professeur
-     */
-    public function professeur()
-    {
-        return $this->hasOne(Professeur::class);
-    }
-
-    public function affectations()
-    {
-        return $this->hasMany(Affectation::class, 'professeur_id');
-    }
-
-    
- public function isAdmin()
+    public function commandes()
+        {
+            return $this->hasMany(Commande::class);
+        }
+    public function isMainAdmin()
 {
-    return $this->is_admin;  
+    // Vous pouvez définir votre logique pour identifier l'admin principal
+    // Par exemple, le premier admin créé ou un champ 'is_main_admin'
+    return $this->id === 1; // ou $this->is_main_admin
 }
 
-    /**
-     * Vérifie si le compte est actif
-     */
-    public function isActive()
-    {
-        return $this->is_active;
-    }
-
-    /**
-     * Retourne nom et prenom
-     */
-    public function getFullName()
-    {
-        return trim($this->prenom.' '.$this->nom);
-    }
 }

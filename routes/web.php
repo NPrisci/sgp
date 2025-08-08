@@ -1,148 +1,97 @@
 <?php
 
-use App\Http\Controllers\Admin\AdminController;
-use App\Http\Controllers\Admin\PeriodeAcademiqueController;
-use App\Http\Controllers\Auth\LoginController;
-use App\Http\Controllers\Auth\RegisterController;
-use App\Http\Controllers\BulletinController;
-use App\Http\Controllers\ClasseController;
-use App\Http\Controllers\HomeController;
-use App\Http\Controllers\ProfesseurController;
-use App\Http\Controllers\ReclamationController;
-use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\Admin\AdminController;
+use App\Http\Controllers\Admin\UserValidationController;
+use App\Http\Controllers\CategorieController;
+use App\Http\Controllers\ProduitController;
+use App\Http\Controllers\ConfigurationController;
+use App\Http\Controllers\Client\ClientController;
+use App\Http\Controllers\Client\PanierController;
+use App\Http\Controllers\Client\CommandeController;
 
-// Page d'accueil
-Route::get('/', [HomeController::class, 'index'])->name('index');
+use App\Http\Controllers\ModifieController;
+use App\Http\Controllers\InformationController;
+use App\Http\Controllers\HoraireController;
+
+Route::get('/', function () {
+    return view('home');
+})->name('home');
 
 Route::get('/healthz', function () {
     return response()->json(['status' => 'ok']);
 });
 
 
-// Authentification
-Route::get('login', [HomeController::class, 'login'])->name('login');
-Route::post('connexion', [LoginController::class, 'connexion'])->name('connexion');
-Route::post('logout', [LoginController::class, 'logout'])->name('logout');
+// Authentification requise
+Route::middleware(['auth'])->group(function () {
+    // Dashboard
+    Route::get('/admin/dashboard', [AdminController::class, 'dashboard'])->name('admin.dashboard');
+    Route::get('/admin/dashboard1', [AdminController::class, 'dashboard1'])->name('admin.dashboard1');
+    Route::get('/client/dashboard', [ClientController::class, 'index'])->name('client.dashboard');
 
-Route::get('register', [RegisterController::class, 'showRegistrationForm'])->name('register');
-Route::post('register', [RegisterController::class, 'register']);
+    // Produits côté client
+    Route::get('/produits', [\App\Http\Controllers\Client\ProduitController::class, 'index'])->name('client.produits.index');
+    Route::get('/produits/{id}', [\App\Http\Controllers\Client\ProduitController::class, 'show'])->name('client.produits.show');
 
-Route::middleware('auth')->group(function () {
+    // Panier
+    Route::get('/panier', [PanierController::class, 'index'])->name('panier.index');
+    Route::post('/panier/ajouter/{id}', [PanierController::class, 'ajouter'])->name('panier.ajouter');
+    Route::delete('/panier/retirer/{id}', [PanierController::class, 'retirer'])->name('panier.retirer');
+    Route::post('/panier/vider', [PanierController::class, 'vider'])->name('panier.vider');
 
-    Route::get('/home', [HomeController::class, 'index'])->name('home');
+    // Commandes
+    Route::get('/commande/valider', [CommandeController::class, 'valider'])->name('commande.valider');
+    Route::post('/commande/confirmer', [CommandeController::class, 'confirmer'])->name('commande.confirmer');
+    Route::get('/commandes', [CommandeController::class, 'mesCommandes'])->name('commandes.mes');
+    Route::get('/commandes/{id}', [CommandeController::class, 'details'])->name('commande.details');
 
-    // Routes Admin
-    Route::prefix('admin')->name('admin.')->group(function () {
-        Route::get('/dashboard', [AdminController::class, 'dashboard'])->name('dashboard');
+    Route::get('/fedapay/callback/{id}', [CommandeController::class, 'fedapayCallback'])->name('fedapay.callback');
+        Route::get('/mon-compte', [ModifieController::class, 'edit'])->name('compte.edit');
+    Route::put('/mon-compte', [ModifieController::class, 'update'])->name('compte.update');
+});
 
-        // Gestion des utilisateurs
-        Route::get('/user/{id}', [AdminController::class, 'showUser'])->name('users.show');
-        Route::post('/user/{id}/approve', [AdminController::class, 'approveUser'])->name('users.approve');
-        Route::post('/user/{id}/deactivate', [AdminController::class, 'deactivateUser'])->name('users.deactivate');
-        Route::post('/user/{id}/reject', [AdminController::class, 'rejectUser'])->name('users.reject');
+// Admin uniquement
+Route::middleware(['auth'])->prefix('admin')->group(function () {
+    Route::resource('categories', CategorieController::class)->except(['show']);
 
-        Route::get('/users', [AdminController::class, 'listUsers'])->name('users.index');
-        Route::get('/users/{user}/edit', [AdminController::class, 'editUser'])->name('users.edit');
-        Route::put('/users/{user}', [AdminController::class, 'updateUser'])->name('users.update');
-        Route::delete('/users/{user}', [AdminController::class, 'destroyUser'])->name('users.destroy');
+    Route::get('/produits', [ProduitController::class, 'index'])->name('produits.index');
+    Route::get('/produits/categorie/{id}', [ProduitController::class, 'afficherProduits'])->name('produits.categorie');
+    Route::get('/produits/create/{categorie_id}', [ProduitController::class, 'create'])->name('produits.create');
+    Route::post('/produits', [ProduitController::class, 'store'])->name('produits.store');
+    Route::get('/produits/{id}/edit', [ProduitController::class, 'edit'])->name('produits.edit');
+    Route::put('/produits/{id}', [ProduitController::class, 'update'])->name('produits.update');
+    Route::delete('/produits/{id}', [ProduitController::class, 'destroy'])->name('produits.destroy');
 
-        Route::get('/approvals', [AdminController::class, 'pendingUsers'])->name('users.pending');
-        Route::get('/active-users', [AdminController::class, 'activeUsers'])->name('users.active');
+    Route::get('/configuration', [ConfigurationController::class, 'index'])->name('admin.configuration.index');
+    Route::put('/configuration', [ConfigurationController::class, 'update'])->name('admin.configuration.update');
 
-        // Années scolaires
-        Route::get('annees-scolaires', [AdminController::class, 'anneesScolaires'])->name('annees.index');
-        Route::get('annees-scolaires/create', [AdminController::class, 'createAnnee'])->name('annees.create');
-        Route::post('annees-scolaires', [AdminController::class, 'storeAnnee'])->name('annees.store');
-        Route::get('annees-scolaires/{id}/edit', [AdminController::class, 'editAnnee'])->name('annees.edit');
-        Route::put('annees-scolaires/{id}', [AdminController::class, 'updateAnnee'])->name('annees.update');
-        Route::delete('annees-scolaires/{id}', [AdminController::class, 'destroyAnnee'])->name('annees.delete');
+    Route::get('/validation/utilisateurs', [UserValidationController::class, 'index'])->name('admin.utilisateurs.validation');
+    Route::put('/validation/utilisateurs/{id}', [UserValidationController::class, 'valider'])->name('admin.utilisateurs.valider');
+    Route::delete('/validation/utilisateurs/{id}', [UserValidationController::class, 'refuser'])->name('admin.utilisateurs.refuser');
 
-        // Périodes académiques
-        Route::get('periodes', [PeriodeAcademiqueController::class, 'index'])->name('periodes.index');
-        Route::get('periodes/create', [PeriodeAcademiqueController::class, 'create'])->name('periodes.create');
-        Route::post('periodes', [PeriodeAcademiqueController::class, 'store'])->name('periodes.store');
-        Route::get('periodes/{id}/edit', [PeriodeAcademiqueController::class, 'edit'])->name('periodes.edit');
-        Route::put('periodes/{id}', [PeriodeAcademiqueController::class, 'update'])->name('periodes.update');
-        Route::delete('periodes/{id}', [PeriodeAcademiqueController::class, 'destroy'])->name('periodes.destroy');
+    Route::get('/clients', [AdminController::class, 'index'])->name('client.index');
+    Route::get('/commandes', [CommandeController::class, 'index'])->name('commandes.index');
+    Route::put('/commandes/{id}/statut', [CommandeController::class, 'updateStatut'])->name('commandes.updateStatut');
+    Route::get('/commandes/{id}', [CommandeController::class, 'show'])->name('commandes.show');
 
-        // Affectation classes/matières
-       Route::get('professeurs/{professeur}/affectation', [AdminController::class, 'affectation'])->name('professeurs.affectation');
-        Route::post('professeurs/{professeur}/affectation', [AdminController::class, 'storeAffectation'])->name('professeurs.affectation.store');
-        Route::get('/professeurs/{id}/edit-affectation', [AdminController::class, 'editAffectation'])->name('professeurs.affectation.edit');
-        Route::put('/professeurs/{id}/update-affectation', [AdminController::class, 'updateAffectation'])->name('professeurs.affectation.update');
-
-        // Affectation élèves
-        Route::get('affectations/annees', [AdminController::class, 'affectationAnnees'])->name('affectation.annees');
-        Route::get('affectations/{annee}/classes', [AdminController::class, 'affectationClasses'])->name('affectation.classes');
-        Route::get('affectations/{annee}/{classe}/eleves', [AdminController::class, 'affectationEleves'])->name('affectation.eleves');
-        Route::post('affectations/assign', [AdminController::class, 'assignerElevesClasse'])->name('affectation.assigner');
-
-        // Migration
-        Route::get('/classes', [AdminController::class, 'showClasses'])->name('classes');
-        Route::get('/classes/{anneeId}/{classeId}/eleves', [AdminController::class, 'showEleves'])->name('classes.eleves');
-        Route::get('/classes/{anneeId}/{classeId}/migration', [AdminController::class, 'migrationPage'])->name('classes.migration');
-        Route::post('/classes/{anneeId}/{classeId}/migrer', [AdminController::class, 'migrerEleves'])->name('classes.migrer');
-
-        Route::get('/migration/{anneeId}/{classeId}', [ProfesseurController::class, 'listeElevesAMigrer'])->name('migration.index');
-        Route::post('/migration/calcule/{anneeId}/{classeId}', [ProfesseurController::class, 'calculerMoyenneAnnuelle'])->name('migration.calcule');
-        Route::get('/migration/{anneeId}/{classeId}/admis/pdf', [ProfesseurController::class, 'exportAdmisPDF'])->name('migration.export.admis');
-        Route::get('/migration/{anneeId}/{classeId}/refuses/pdf', [ProfesseurController::class, 'exportRefusesPDF'])->name('migration.export.refuses');
-
-        // Résultats
-        Route::get('/resultats', [AdminController::class, 'showResultats'])->name('resultats');
-        Route::get('/resultats/{anneeId}', [AdminController::class, 'showClassesForAnnee'])->name('resultats.classes');
-        Route::get('/resultats/{anneeId}/{classeId}', [AdminController::class, 'showElevesForResultats'])->name('resultats.eleves');
-
-        // Routes pour les réclamations admin
-    // Routes pour les réclamations admin
-        Route::prefix('reclamations')->group(function () {
-            Route::get('/', [ReclamationController::class, 'adminIndex'])->name('reclamations.admin');
-            Route::post('/unlock/{reclamation}', [ReclamationController::class, 'unlockNote'])->name('reclamations.unlock');
-        });
-
-    });
-
-    // Ressources principales
-    Route::resource('classes', ClasseController::class);
-    Route::resource('professeurs', ProfesseurController::class);
-
-    // Affectation des classes aux professeurs
-    Route::post('/professeurs/{professeur}/affecter-classes', [ProfesseurController::class, 'affecterClasses'])->name('professeurs.affecter-classes');
-
-    // Matières d'une classe
-    Route::get('/api/classes/{classe}/matieres', [ClasseController::class, 'getMatieres'])->name('classes.matieres');
-
-    // Routes Professeur
-    Route::prefix('professeur')->name('professeur.')->group(function () {
-        Route::get('/dashboard', [ProfesseurController::class, 'dashboard'])->name('dashboard');
-        Route::get('/classes/{anneeId}', [ProfesseurController::class, 'mesClasses'])->name('classes');
-        Route::get('/classe/{anneeId}/{classeId}/eleves', [ProfesseurController::class, 'elevesParClasse'])->name('classe.eleves');
-        Route::get('/statistiques/{anneeId}/{classeId}', [ProfesseurController::class, 'showStatistics'])->name('statistiques.show');
-        Route::post('/notes/enregistrer', [ProfesseurController::class, 'saisirNotes'])->name('notes.enregistrer');
-    });
-
-    // Bulletins
-    Route::get('/bulletins', [BulletinController::class, 'index'])->name('bulletin.index');
-    Route::get('/bulletins/{annee_academique_id}', [BulletinController::class, 'show'])->name('bulletin.show');
-    Route::get('/bulletin/{annee_academique_id}/download', [BulletinController::class, 'downloadBulletin'])->name('bulletin.download');
-
-    // Modification profil
-    Route::get('/profile/edit', [UserController::class, 'editProfile'])->name('profile.edit');
-    Route::put('/profile/update', [UserController::class, 'updateProfile'])->name('profile.update');
-    Route::get('/profile/editadmin', [UserController::class, 'admineditProfile'])->name('profile.admin.edit');
-    Route::put('/profile/updateadmin', [UserController::class, 'adminupdateProfile'])->name('profile.admin.update');
-    Route::get('/profile/editeleve', [BulletinController::class, 'editProfileleve'])->name('profile.editeleve');
-
-    // Routes pour les réclamations
-  Route::prefix('reclamations')->group(function () {
-        Route::get('/', [ReclamationController::class, 'professeurIndex'])->name('reclamations.professeur');
-        Route::get('/create/{eleve}', [ReclamationController::class, 'create'])->name('reclamations.create');
-        Route::post('/store', [ReclamationController::class, 'store'])->name('reclamations.store');
-        Route::get('professeur/reclamations/suivi/{eleve_id?}', [ReclamationController::class, 'suiviReclamations'])->name('reclamations.suivi');
-
-    });
+    Route::get('/admin/informations', [InformationController::class, 'edit'])->name('admin.informations.edit');
+    Route::put('/admin/informations', [InformationController::class, 'update'])->name('admin.informations.update');
+    Route::get('/admin/horaires', [HoraireController::class, 'index'])->name('admin.horaires.index');
+    Route::post('/admin/horaires', [HoraireController::class, 'store'])->name('admin.horaires.store');
+    Route::delete('/admin/horaires/{id}', [HoraireController::class, 'destroy'])->name('admin.horaires.destroy');
 
 });
 
+// Accessible uniquement au super admin (id == 1)
+Route::middleware(['auth', 'verified'])->group(function () {
+    Route::get('/admin/gestion-admins', [AdminController::class, 'inde'])->name('superadmin.admins');
+    Route::post('/admin/admins/{id}/valider', [AdminController::class, 'valider'])->name('admin.valider');
+    Route::post('/admin/admins/{id}/desactiver', [AdminController::class, 'desactiver'])->name('admin.desactiver');
+    Route::delete('/admin/admins/{id}', [AdminController::class, 'rejeter'])->name('admin.rejeter');
 
+});
+
+Route::put('/admin/commandes/{id}/statut', [CommandeController::class, 'changerStatut'])->name('commande.statut');
+
+require __DIR__.'/auth.php';
