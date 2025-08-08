@@ -1,0 +1,9 @@
+services:
+  - type: web
+    name: laravel-poissonnerie
+    env: docker
+    plan: free
+    branch: main  # ou le nom de ta branche
+    dockerfilePath: ./Dockerfile
+    buildCommand: ""
+    startCommand: ""
