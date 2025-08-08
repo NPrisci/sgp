@@ -4,14 +4,19 @@ set -e
 echo "✅ Installation des dépendances Laravel"
 composer install --no-interaction --prefer-dist --optimize-autoloader
 
-echo "✅ Nettoyage et mise en cache de la configuration"
-php artisan config:clear
-php artisan config:cache
+echo "✅ Copie du fichier .env s'il existe"
+if [ -f .env.example ]; then
+    cp .env.example .env
+fi
 
+echo "✅ Génération de la clé Laravel"
+php artisan key:generate
 
+echo "✅ Lancement des migrations"
+php artisan migrate --force
 
-echo "✅ Lancement des migrations (fresh + seed)"
-php artisan migrate:fresh --seed --force
+echo "✅ Lien du stockage public"
+php artisan storage:link || true
 
 echo "✅ Lancement du serveur nginx/php-fpm"
 /start.sh
